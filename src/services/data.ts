@@ -1,6 +1,7 @@
 import { trainingPlan } from '../data/training-plan'
 import { buildWeeklyComparison, metricsForRunner } from '../lib/metrics'
 import { isDemoMode, supabase } from '../lib/supabase'
+import { workoutAssignmentError } from '../lib/workouts'
 import type { Effort, PlannedWorkout, Profile, RunInput, RunLog, RunnerMetrics, WeeklyComparison } from '../types'
 
 export const demoProfiles: Profile[] = [
@@ -34,6 +35,17 @@ function mapRun(row: Record<string, unknown>): RunLog {
   }
 }
 
+function assertDemoAssignment(input: RunInput, editingRunId?: string) {
+  if (!input.plannedWorkoutId) return
+  const issue = workoutAssignmentError(trainingPlan.find((workout) => workout.id === input.plannedWorkoutId), input.runDate, readDemoRuns(), editingRunId)
+  if (issue) throw new Error(issue)
+}
+
+function runMutationError(error: { code?: string; message?: string }) {
+  if (error.code === '23505' || error.message?.includes('one_active_log_per_workout')) return new Error('This planned workout is already linked to another run. Choose another workout or leave it extra.')
+  return error
+}
+
 export async function getProfile(userId: string): Promise<Profile> {
   if (isDemoMode) return demoProfiles.find((profile) => profile.id === userId) ?? demoProfiles[0]
   const { data, error } = await supabase!.from('profiles').select('id, display_name, email').eq('id', userId).single()
@@ -57,6 +69,7 @@ export async function getRuns(userId: string): Promise<RunLog[]> {
 
 export async function createRun(userId: string, input: RunInput): Promise<RunLog> {
   if (isDemoMode) {
+    assertDemoAssignment(input)
     const now = new Date().toISOString()
     const run: RunLog = {
       id: crypto.randomUUID(), userId, plannedWorkoutId: input.plannedWorkoutId, runDate: input.runDate,
@@ -70,13 +83,14 @@ export async function createRun(userId: string, input: RunInput): Promise<RunLog
     user_id: userId, planned_workout_id: input.plannedWorkoutId, run_date: input.runDate, distance_km: input.distanceKm,
     duration_seconds: input.durationSeconds, effort: input.effort, notes: input.notes,
   }).select().single()
-  if (error) throw error
+  if (error) throw runMutationError(error)
   return mapRun(data)
 }
 
 export async function updateRun(userId: string, input: RunInput): Promise<RunLog> {
   if (!input.id) throw new Error('Run id is required')
   if (isDemoMode) {
+    assertDemoAssignment(input, input.id)
     let updated: RunLog | undefined
     writeDemoRuns(readDemoRuns().map((run) => {
       if (run.id !== input.id || run.userId !== userId) return run
@@ -90,7 +104,7 @@ export async function updateRun(userId: string, input: RunInput): Promise<RunLog
     planned_workout_id: input.plannedWorkoutId, run_date: input.runDate, distance_km: input.distanceKm,
     duration_seconds: input.durationSeconds, effort: input.effort, notes: input.notes,
   }).eq('id', input.id).eq('user_id', userId).select().single()
-  if (error) throw error
+  if (error) throw runMutationError(error)
   return mapRun(data)
 }
 

@@ -6,7 +6,7 @@ export default defineConfig({
     command: 'npm run dev -- --host 127.0.0.1 --port 4174',
     port: 4174,
     reuseExistingServer: false,
-    env: { VITE_DEMO_MODE: 'true', VITE_DEMO_DATE: '2026-07-27' },
+    env: { VITE_DEMO_MODE: 'true', VITE_DEMO_DATE: '2026-08-01' },
   },
   use: { baseURL: 'http://127.0.0.1:4174', trace: 'on-first-retry' },
   projects: [
