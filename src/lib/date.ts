@@ -1,4 +1,4 @@
-import { endOfMonth, endOfWeek, format, isWithinInterval, parseISO, startOfMonth, startOfWeek } from 'date-fns'
+import { endOfMonth, endOfWeek, format, isValid, isWithinInterval, parseISO, startOfMonth, startOfWeek } from 'date-fns'
 
 export const APP_TIME_ZONE = 'Asia/Kolkata'
 
@@ -15,6 +15,14 @@ export function todayISO() {
 
 export function formatPlanDate(date: string, pattern = 'd MMM') {
   return format(parseISO(date), pattern)
+}
+
+export function isValidISODate(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && isValid(parseISO(value))
+}
+
+export function endOfPlanWeekISO(date: string) {
+  return format(endOfWeek(parseISO(date), { weekStartsOn: 1 }), 'yyyy-MM-dd')
 }
 
 export function isInCurrentWeek(date: string, reference = todayISO()) {

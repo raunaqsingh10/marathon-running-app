@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Profile, RunLog } from '../types'
-import { metricsForRunner } from './metrics'
+import { buildWeeklyComparison, metricsForRunner } from './metrics'
 
 const profile: Profile = { id: 'runner', displayName: 'Raunaq', email: 'r@example.com' }
 const run = (plannedWorkoutId: string | null, runDate: string, distanceKm: number): RunLog => ({
@@ -22,5 +22,20 @@ describe('runner metrics', () => {
     expect(metrics.weeklyKm).toBe(4.2)
     expect(metrics.completedDue).toBe(0)
     expect(metrics.longestRunKm).toBe(4.2)
+  })
+
+  it('counts a late run against the planned workout it fulfills', () => {
+    const metrics = metricsForRunner(profile, [run('w1-strides', '2026-08-01', 4.5)], '2026-08-01')
+    expect(metrics.weeklyKm).toBe(4.5)
+    expect(metrics.completedDue).toBe(1)
+    expect(metrics.plannedDue).toBe(3)
+  })
+
+  it('includes extra and make-up runs in the weekly distance comparison', () => {
+    const weekly = buildWeeklyComparison([
+      run(null, '2026-07-30', 4.2),
+      run('w1-strides', '2026-08-01', 4.5),
+    ], [profile, { id: 'vipul', displayName: 'Vipul', email: 'v@example.com' }])
+    expect(weekly[0]?.raunaqKm).toBe(8.7)
   })
 })

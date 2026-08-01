@@ -1,4 +1,4 @@
-import { startOfWeek, format } from 'date-fns'
+import { addDays, format, startOfWeek } from 'date-fns'
 import { trainingPlan } from '../data/training-plan'
 import type { Profile, RunLog, RunnerMetrics, WeeklyComparison } from '../types'
 import { isInCurrentMonth, isInCurrentWeek, todayISO } from './date'
@@ -29,9 +29,11 @@ export function metricsForRunner(profile: Profile, runs: RunLog[], reference = t
 export function buildWeeklyComparison(runs: RunLog[], profiles: Profile[]): WeeklyComparison[] {
   return Array.from({ length: 8 }, (_, index) => {
     const workout = trainingPlan.find((item) => item.week === index + 1)!
-    const weekStart = format(startOfWeek(new Date(`${workout.date}T12:00:00`), { weekStartsOn: 1 }), 'yyyy-MM-dd')
+    const weekStartDate = startOfWeek(new Date(`${workout.date}T12:00:00`), { weekStartsOn: 1 })
+    const weekStart = format(weekStartDate, 'yyyy-MM-dd')
+    const weekEnd = format(addDays(weekStartDate, 6), 'yyyy-MM-dd')
     const totals = (profile?: Profile) => runs
-      .filter((run) => !run.deletedAt && run.userId === profile?.id && trainingPlan.find((item) => item.id === run.plannedWorkoutId)?.week === index + 1)
+      .filter((run) => !run.deletedAt && run.userId === profile?.id && run.runDate >= weekStart && run.runDate <= weekEnd)
       .reduce((sum, run) => sum + run.distanceKm, 0)
     return { week: index + 1, weekStart, raunaqKm: totals(profiles.find((p) => p.displayName.toLowerCase() === 'raunaq')), vipulKm: totals(profiles.find((p) => p.displayName.toLowerCase() === 'vipul')) }
   })
