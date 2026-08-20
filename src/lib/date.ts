@@ -25,6 +25,10 @@ export function endOfPlanWeekISO(date: string) {
   return format(endOfWeek(parseISO(date), { weekStartsOn: 1 }), 'yyyy-MM-dd')
 }
 
+export function startOfPlanWeekISO(date: string) {
+  return format(startOfWeek(parseISO(date), { weekStartsOn: 1 }), 'yyyy-MM-dd')
+}
+
 export function isInCurrentWeek(date: string, reference = todayISO()) {
   const ref = parseISO(reference)
   return isWithinInterval(parseISO(date), {

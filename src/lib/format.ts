@@ -1,3 +1,9 @@
+export interface DurationFields {
+  hours: string
+  minutes: string
+  seconds: string
+}
+
 export function parseDuration(value: string): number | null {
   const parts = value.trim().split(':').map(Number)
   if ((parts.length !== 2 && parts.length !== 3) || parts.some(Number.isNaN)) return null
@@ -5,6 +11,25 @@ export function parseDuration(value: string): number | null {
   if (hours < 0 || minutes < 0 || seconds < 0 || minutes > 59 || seconds > 59) return null
   const total = hours * 3600 + minutes * 60 + seconds
   return total > 0 ? total : null
+}
+
+export function durationFieldsFromValue(value: string): DurationFields {
+  const parts = value.trim().split(':')
+  if (parts.length === 3) return { hours: parts[0] ?? '', minutes: parts[1] ?? '', seconds: parts[2] ?? '' }
+  if (parts.length === 2) return { hours: '', minutes: parts[0] ?? '', seconds: parts[1] ?? '' }
+  return { hours: '', minutes: '', seconds: '' }
+}
+
+export function durationFieldsFromSeconds(totalSeconds: number): DurationFields {
+  return durationFieldsFromValue(formatDuration(totalSeconds))
+}
+
+export function durationValueFromFields(fields: DurationFields) {
+  const hours = fields.hours.trim()
+  const minutes = fields.minutes.trim()
+  const seconds = fields.seconds.trim()
+  if (!minutes || !seconds) return ''
+  return hours ? `${hours}:${minutes}:${seconds}` : `${minutes}:${seconds}`
 }
 
 export function formatDuration(totalSeconds: number) {

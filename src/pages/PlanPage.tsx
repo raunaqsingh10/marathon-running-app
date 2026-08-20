@@ -2,7 +2,7 @@ import { CheckCircleIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { ErrorState, PageSkeleton } from '../components/States'
 import { usePlan, useRuns } from '../hooks/useAppData'
-import { formatPlanDate, todayISO } from '../lib/date'
+import { formatPlanDate, isInCurrentWeek, todayISO } from '../lib/date'
 import { completedWorkoutIds, workoutStatusLabel } from '../lib/workouts'
 
 export function PlanPage() {
@@ -25,7 +25,8 @@ export function PlanPage() {
         <div className="pb-8 md:pl-[35%]">{workouts.map((workout) => {
           const completion = activeRuns.find((run) => run.plannedWorkoutId === workout.id)
           const isToday = workout.date === today, isComplete = completed.has(workout.id), isFuture = workout.date > today
-          return <div key={workout.id} className={`grid grid-cols-[4rem_1fr_auto] gap-3 border-t py-5 ${isToday ? 'border-accent' : 'border-line'} ${isFuture ? 'text-muted' : ''}`}><div><p className="text-xs font-semibold uppercase tracking-[.1em]">{formatPlanDate(workout.date, 'EEE')}</p><p className="number mt-1 text-sm">{formatPlanDate(workout.date, 'd MMM')}</p></div><div><div className="flex items-center gap-2"><p className="font-semibold">{workout.session}</p>{isToday && <span className="text-[.65rem] font-bold uppercase tracking-[.12em] text-accent">Today</span>}</div><p className="mt-1 text-sm text-muted">{workout.targetPace}</p><p className="mt-2 hidden max-w-lg text-sm leading-6 text-muted sm:block">{workout.workoutDetail}</p></div><div className="text-right"><p className="number font-medium">{workout.plannedKm.toFixed(1)} KM</p>{isComplete && completion ? <div className="mt-2 flex items-center justify-end gap-2 text-xs font-semibold text-accent" aria-label={workoutStatusLabel(workout, completion)}><CheckCircleIcon size={20} weight="fill" /><span className="hidden sm:inline">{completion.runDate === workout.date ? 'Completed' : `Made up ${formatPlanDate(completion.runDate, 'EEE')}`}</span></div> : !isFuture && <Link to={`/log?workout=${workout.id}`} className="focus-ring mt-2 inline-block text-xs font-semibold underline underline-offset-4">Log</Link>}</div></div>
+          const canLog = !isComplete && (!isFuture || isInCurrentWeek(workout.date, today))
+          return <div key={workout.id} className={`grid grid-cols-[4rem_1fr_auto] gap-3 border-t py-5 ${isToday ? 'border-accent' : 'border-line'} ${isFuture ? 'text-muted' : ''}`}><div><p className="text-xs font-semibold uppercase tracking-[.1em]">{formatPlanDate(workout.date, 'EEE')}</p><p className="number mt-1 text-sm">{formatPlanDate(workout.date, 'd MMM')}</p></div><div><div className="flex items-center gap-2"><p className="font-semibold">{workout.session}</p>{isToday && <span className="text-[.65rem] font-bold uppercase tracking-[.12em] text-accent">Today</span>}</div><p className="mt-1 text-sm text-muted">{workout.targetPace}</p><p className="mt-2 hidden max-w-lg text-sm leading-6 text-muted sm:block">{workout.workoutDetail}</p></div><div className="text-right"><p className="number font-medium">{workout.plannedKm.toFixed(1)} KM</p>{isComplete && completion ? <div className="mt-2 flex items-center justify-end gap-2 text-xs font-semibold text-accent" aria-label={workoutStatusLabel(workout, completion)}><CheckCircleIcon size={20} weight="fill" /><span className="hidden sm:inline">{workoutStatusLabel(workout, completion)}</span></div> : canLog && <Link to={`/log?workout=${workout.id}`} className="focus-ring mt-2 inline-block text-xs font-semibold underline underline-offset-4">{isFuture ? 'Log early' : 'Log'}</Link>}</div></div>
         })}</div>
       </details>
     })}</div>

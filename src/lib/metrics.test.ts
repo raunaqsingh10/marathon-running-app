@@ -31,6 +31,13 @@ describe('runner metrics', () => {
     expect(metrics.plannedDue).toBe(3)
   })
 
+  it('counts an early run against a future workout once that workout is due', () => {
+    const metrics = metricsForRunner(profile, [run('w1-long', '2026-07-28', 9)], '2026-08-02')
+    expect(metrics.weeklyKm).toBe(9)
+    expect(metrics.completedDue).toBe(1)
+    expect(metrics.plannedDue).toBe(4)
+  })
+
   it('includes extra and make-up runs in the weekly distance comparison', () => {
     const weekly = buildWeeklyComparison([
       run(null, '2026-07-30', 4.2),
