@@ -19,13 +19,17 @@ const run = (id: string, plannedWorkoutId: string | null, runDate: string, delet
 })
 
 const friday = trainingPlan.find((workout) => workout.id === 'w1-strides')!
+const sunday = trainingPlan.find((workout) => workout.id === 'w1-long')!
 
 describe('planned workout make-up rules', () => {
-  it('allows a run from the scheduled date through Sunday only', () => {
+  it('allows any run within the planned workout week', () => {
+    expect(isWorkoutEligibleForRunDate(friday, '2026-07-27')).toBe(true)
+    expect(isWorkoutEligibleForRunDate(friday, '2026-07-30')).toBe(true)
     expect(isWorkoutEligibleForRunDate(friday, '2026-07-31')).toBe(true)
     expect(isWorkoutEligibleForRunDate(friday, '2026-08-01')).toBe(true)
     expect(isWorkoutEligibleForRunDate(friday, '2026-08-02')).toBe(true)
-    expect(isWorkoutEligibleForRunDate(friday, '2026-07-30')).toBe(false)
+    expect(isWorkoutEligibleForRunDate(sunday, '2026-07-28')).toBe(true)
+    expect(isWorkoutEligibleForRunDate(friday, '2026-07-26')).toBe(false)
     expect(isWorkoutEligibleForRunDate(friday, '2026-08-03')).toBe(false)
   })
 
@@ -39,8 +43,9 @@ describe('planned workout make-up rules', () => {
 
   it('returns clear errors for invalid or duplicate assignments', () => {
     expect(workoutAssignmentError(friday, '2026-08-01', [])).toBeNull()
-    expect(workoutAssignmentError(friday, '2026-07-30', [])).toContain('before')
-    expect(workoutAssignmentError(friday, '2026-08-03', [])).toContain('Sunday')
+    expect(workoutAssignmentError(friday, '2026-07-30', [])).toBeNull()
+    expect(workoutAssignmentError(friday, '2026-07-26', [])).toContain('27 Jul')
+    expect(workoutAssignmentError(friday, '2026-08-03', [])).toContain('2 Aug')
     expect(workoutAssignmentError(friday, '2026-08-01', [run('existing', friday.id, '2026-08-01')])).toContain('already linked')
   })
 

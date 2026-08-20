@@ -1,8 +1,8 @@
 import type { PlannedWorkout, RunLog } from '../types'
-import { endOfPlanWeekISO, formatPlanDate, isValidISODate } from './date'
+import { endOfPlanWeekISO, formatPlanDate, isValidISODate, startOfPlanWeekISO } from './date'
 
 export function isWorkoutEligibleForRunDate(workout: PlannedWorkout, runDate: string) {
-  return isValidISODate(runDate) && runDate >= workout.date && runDate <= endOfPlanWeekISO(workout.date)
+  return isValidISODate(runDate) && runDate >= startOfPlanWeekISO(workout.date) && runDate <= endOfPlanWeekISO(workout.date)
 }
 
 export function activeRunForWorkout(runs: RunLog[], workoutId: string, editingRunId?: string) {
@@ -24,15 +24,17 @@ export function eligibleMakeUpWorkouts(plan: PlannedWorkout[], runs: RunLog[], r
 export function workoutAssignmentError(workout: PlannedWorkout | undefined, runDate: string, runs: RunLog[], editingRunId?: string) {
   if (!workout) return 'Choose a planned workout or leave this as an extra run.'
   if (!isValidISODate(runDate)) return 'Enter a valid run date before assigning this workout.'
-  if (runDate < workout.date) return `The run date cannot be before ${formatPlanDate(workout.date, 'd MMM yyyy')}.`
+  const weekStart = startOfPlanWeekISO(workout.date)
   const weekEnd = endOfPlanWeekISO(workout.date)
-  if (runDate > weekEnd) return `A make-up run must be dated by ${formatPlanDate(weekEnd, 'EEEE, d MMM yyyy')}.`
+  if (runDate < weekStart || runDate > weekEnd) {
+    return `This workout can only be assigned to a run from ${formatPlanDate(weekStart, 'd MMM')} through ${formatPlanDate(weekEnd, 'd MMM yyyy')}.`
+  }
   if (activeRunForWorkout(runs, workout.id, editingRunId)) return 'This planned workout is already linked to another run.'
   return null
 }
 
 export function workoutStatusLabel(workout: PlannedWorkout, run: RunLog) {
-  return run.runDate === workout.date
-    ? 'Completed as planned'
-    : `Made up from ${formatPlanDate(workout.date, 'EEEE')}`
+  if (run.runDate === workout.date) return 'Completed as planned'
+  if (run.runDate < workout.date) return `Completed early on ${formatPlanDate(run.runDate, 'EEEE')}`
+  return `Made up from ${formatPlanDate(workout.date, 'EEEE')}`
 }
